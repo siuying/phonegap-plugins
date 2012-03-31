@@ -13,11 +13,12 @@
 
 - (void)encodeAudio:(NSArray*)arguments withDict:(NSDictionary*)options
 {
-    self.successCallback = [[arguments objectAtIndex:1] retain];
-    self.failCallback = [[arguments objectAtIndex:2] retain];
+    self.successCallback = [arguments objectAtIndex:1];
+    self.failCallback = [arguments objectAtIndex:2];
+
 	NSString* audioPath = [arguments objectAtIndex:0];
-    
-	NSURL* audioURL = [NSURL fileURLWithPath:audioPath];
+	NSURL* audioURL = [NSURL fileURLWithPath:audioPath isDirectory:NO];
+
 	AVURLAsset* audioAsset = [[AVURLAsset alloc] initWithURL:audioURL options:nil];
     AVAssetExportSession* exportSession = [[AVAssetExportSession alloc] initWithAsset:audioAsset presetName:AVAssetExportPresetAppleM4A];
 	
@@ -26,9 +27,9 @@
 
     exportSession.outputURL = destinationURL;
 	exportSession.outputFileType = AVFileTypeAppleM4A;
-	
+	exportSession.shouldOptimizeForNetworkUse = YES;
+
     [exportSession exportAsynchronouslyWithCompletionHandler:^{
-    
         if (AVAssetExportSessionStatusCompleted == exportSession.status) {
             NSLog(@"AVAssetExportSessionStatusCompleted");
             [self performSelectorOnMainThread:@selector(doSuccessCallback:) withObject:[exportSession.outputURL path] waitUntilDone:NO];
@@ -43,7 +44,10 @@
             NSLog(@"Export Session Status: %d", exportSession.status);
         }
         
-        [exportSession release];
+        [destinationURL autorelease];
+        [audioURL autorelease];
+        [audioAsset autorelease];
+        [exportSession autorelease];
     }];
     
 	
@@ -52,7 +56,7 @@
 	if ([fileMgr removeItemAtPath:audioPath error:&error] != YES) {
 		NSLog(@"Unable to delete file: %@", [error localizedDescription]);
     }
-    
+
 }
 
 
@@ -61,14 +65,18 @@
     NSLog(@"doing success callback");
     NSString* jsCallback = [NSString stringWithFormat:@"%@(\"%@\");", self.successCallback, path];
     [self writeJavascript: jsCallback];
-    [self.successCallback release];
 }
 
 -(void) doFailCallback:(NSString*)status {
     NSLog(@"doing fail callback");
     NSString* jsCallback = [NSString stringWithFormat:@"%@(\"%@\");", self.failCallback, status];
     [self writeJavascript: jsCallback];
-    [self.failCallback release];
+}
+
+-(void) dealloc {
+    self.successCallback = nil;
+    self.failCallback = nil;
+    [super dealloc];
 }
 
 @end
