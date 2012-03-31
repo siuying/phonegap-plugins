@@ -30,7 +30,7 @@ AudioEncode.prototype.encodeAudio = function(audioPath, success, fail) {
         },
     };
 
-    return PhoneGap.exec("AudioEncode.encodeAudio", audioPath, callbackPrefix + '.success', callbackPrefix + '.fail');
+    return Cordova.exec("AudioEncode.encodeAudio", audioPath, callbackPrefix + '.success', callbackPrefix + '.fail');
 };
 
 Cordova.addConstructor(function() {
